@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - Movie API</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f4f7fc;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 800px;
+      text-align: center;
+      background: #fff;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      color: #0056d6;
+      margin-bottom: 20px;
+    }
+
+    .section {
+      margin-bottom: 30px;
+      padding: 20px;
+      background: #f9f9f9;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .section h2 {
+      margin-bottom: 15px;
+      font-size: 18px;
+    }
+
+    input, button {
+      display: block;
+      width: 100%;
+      max-width: 400px;
+      margin: 10px auto;
+      padding: 12px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+    }
+
+    button {
+      background-color: #0056d6;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #003d99;
+    }
+
+    pre {
+      background: #f1f1f1;
+      padding: 10px;
+      border-radius: 5px;
+      text-align: left;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Dashboard</h1>
+    <!-- Search Movies -->
+    <div class="section">
+      <h2>Search Movies</h2>
+      <input type="text" id="searchTitle" placeholder="Movie title" />
+      <input type="number" id="searchYear" placeholder="Release year" />
+      <button id="searchButton">Search</button>
+      <div id="searchResults"></div>
+    </div>
+
+    <!-- Search Movie Data by IMDb ID -->
+    <div class="section">
+      <h2>Search Movie Data by IMDb ID</h2>
+      <input type="text" id="movieImdbID" placeholder="Enter IMDb ID" />
+      <button id="movieDataButton">Get Movie Data</button>
+      <div id="movieDataResults"></div>
+    </div>
+
+    <!-- Upload Poster -->
+    <div class="section">
+      <h2>Upload Poster</h2>
+      <input type="text" id="posterImdbID" placeholder="Enter IMDb ID" />
+      <input type="file" id="posterFile" />
+      <button id="uploadPosterButton">Upload Poster</button>
+      <div id="uploadResponse"></div>
+    </div>
+  </div>
+
+  <script>
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('You are not logged in. Redirecting to login page.');
+      window.location.href = 'login.html';
+    }
+
+    // Search Movies
+    document.getElementById('searchButton').addEventListener('click', async () => {
+      const title = document.getElementById('searchTitle').value;
+      const year = document.getElementById('searchYear').value;
+
+      try {
+        const response = await fetch(`http://localhost:3001/movies/search?title=${title}&year=${year}`);
+        const result = await response.json();
+
+        if (response.ok) {
+          document.getElementById('searchResults').innerHTML = `
+            <pre>${JSON.stringify(result, null, 2)}</pre>
+          `;
+        } else {
+          document.getElementById('searchResults').innerHTML = 'Error fetching movies';
+        }
+      } catch (error) {
+        document.getElementById('searchResults').innerHTML = 'Error fetching movies';
+      }
+    });
+
+    // Get Movie Data by IMDb ID
+    document.getElementById('movieDataButton').addEventListener('click', async () => {
+      const imdbID = document.getElementById('movieImdbID').value;
+
+      try {
+        const response = await fetch(`http://localhost:3001/movies/data/${imdbID}`);
+        const result = await response.json();
+
+        if (response.ok) {
+          document.getElementById('movieDataResults').innerHTML = `
+            <pre>${JSON.stringify(result, null, 2)}</pre>
+          `;
+        } else {
+          document.getElementById('movieDataResults').innerHTML = 'Error fetching movie data';
+        }
+      } catch (error) {
+        document.getElementById('movieDataResults').innerHTML = 'Error fetching movie data';
+      }
+    });
+
+    // Upload Poster
+    document.getElementById('uploadPosterButton').addEventListener('click', async () => {
+      const imdbID = document.getElementById('posterImdbID').value;
+      const posterFile = document.getElementById('posterFile').files[0];
+
+      if (!posterFile) {
+        alert('Please select a poster file to upload');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('poster', posterFile);
+      formData.append('imdbID', imdbID);
+
+      try {
+        const response = await fetch(`http://localhost:3001/posters/add/${imdbID}`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+          body: formData,
+        });
+
+        if (response.ok) {
+          document.getElementById('uploadResponse').innerHTML = 'Poster uploaded successfully!';
+        } else {
+          document.getElementById('uploadResponse').innerHTML = 'Error uploading poster';
+        }
+      } catch (error) {
+        document.getElementById('uploadResponse').innerHTML = 'Error uploading poster';
+      }
+    });
+  </script>
+</body>
+</html>
+
+
